@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tracker — Green Roots</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --green: #16a34a; --green-dark: #14532d; --green-med: #15803d;
+      --green-light: #dcfce7; --green-lighter: #f0fdf4; --green-border: #bbf7d0;
+      --text: #111827; --text-mid: #374151; --text-muted: #6b7280;
+      --white: #ffffff; --bg: #f9fafb; --border: #e5e7eb;
+      --radius: 12px; --radius-lg: 16px;
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: var(--text); background: var(--bg); }
+
+    /* NAV */
+    nav { position: sticky; top:0; z-index:100; background: rgba(255,255,255,0.96); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); padding: 0 24px; height: 64px; display:flex; align-items:center; justify-content:space-between; }
+    .nav-logo { font-size:1.15rem; font-weight:800; color:var(--green); text-decoration:none; }
+    .nav-logo::before { content:"🌱 "; }
+    .nav-links { display:flex; gap:4px; list-style:none; }
+    .nav-links a { color:var(--text-mid); text-decoration:none; font-size:0.875rem; padding:6px 10px; border-radius:6px; transition:all 0.15s; }
+    .nav-links a:hover, .nav-links a.active { color:var(--green); background:var(--green-lighter); }
+    .nav-links a.active { font-weight:600; }
+
+    /* PAGE HEADER */
+    .page-header { background: linear-gradient(135deg, #f0fdf4, #dcfce7); padding: 48px 24px 40px; border-bottom: 1px solid var(--green-border); }
+    .page-header-inner { max-width: 1100px; margin: 0 auto; }
+    .page-eyebrow { font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--green); margin-bottom:10px; }
+    .page-header h1 { font-size:2.2rem; font-weight:800; color:var(--text); margin-bottom:8px; }
+    .page-header p { color:var(--text-muted); font-size:1rem; }
+
+    /* MAIN LAYOUT */
+    .main { max-width:1100px; margin:0 auto; padding:32px 24px 64px; }
+
+    /* CARDS */
+    .card { background:var(--white); border:1px solid var(--border); border-radius:var(--radius-lg); padding:28px; }
+    .card-title { font-size:1rem; font-weight:700; color:var(--text); margin-bottom:4px; }
+    .card-sub { font-size:0.85rem; color:var(--text-muted); margin-bottom:20px; }
+
+    /* STAT GRID */
+    .stat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:28px; }
+    .stat-card { background:var(--white); border:1px solid var(--border); border-radius:var(--radius); padding:20px; text-align:center; }
+    .stat-num { font-size:2rem; font-weight:800; color:var(--green); line-height:1; margin-bottom:4px; }
+    .stat-lbl { font-size:0.8rem; color:var(--text-muted); }
+
+    /* LOG FORM */
+    .log-grid { display:grid; grid-template-columns:1fr 1fr 1fr 140px; gap:14px; align-items:end; margin-bottom:0; }
+    .form-group { display:flex; flex-direction:column; gap:6px; }
+    .form-group label { font-size:0.82rem; font-weight:600; color:var(--text-mid); }
+    .form-group input, .form-group select {
+      padding:10px 14px; border:1px solid var(--border); border-radius:8px; font-size:0.9rem;
+      color:var(--text); background:var(--white); outline:none; font-family:inherit;
+      transition:border-color 0.2s, box-shadow 0.2s;
+    }
+    .form-group input:focus, .form-group select:focus { border-color:var(--green); box-shadow:0 0 0 3px rgba(22,163,74,0.1); }
+    .btn-log { padding:10px 20px; background:var(--green); color:#fff; border:none; border-radius:8px; font-size:0.9rem; font-weight:700; cursor:pointer; font-family:inherit; transition:background 0.2s, transform 0.15s; white-space:nowrap; }
+    .btn-log:hover { background:var(--green-med); transform:translateY(-1px); }
+
+    /* LOG TABLE */
+    .log-table-wrap { overflow-x:auto; margin-top:24px; }
+    table { width:100%; border-collapse:collapse; font-size:0.875rem; }
+    thead th { text-align:left; padding:10px 14px; font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted); border-bottom:2px solid var(--border); }
+    tbody td { padding:12px 14px; border-bottom:1px solid var(--border); color:var(--text-mid); }
+    tbody tr:last-child td { border-bottom:none; }
+    tbody tr:hover td { background:var(--green-lighter); }
+    .badge { display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:100px; font-size:0.75rem; font-weight:600; }
+    .badge-paper { background:#eff6ff; color:#1d4ed8; }
+    .badge-bottles { background:var(--green-light); color:var(--green-dark); }
+    .badge-compost { background:#fef3c7; color:#92400e; }
+    .badge-mixed { background:#f3e8ff; color:#7c3aed; }
+    .del-btn { background:none; border:none; cursor:pointer; color:#ef4444; font-size:0.9rem; padding:4px 8px; border-radius:6px; transition:background 0.15s; }
+    .del-btn:hover { background:#fee2e2; }
+
+    /* CHART */
+    .chart-area { height:180px; display:flex; align-items:flex-end; gap:10px; padding:16px 0 0; }
+    .bar-col { flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; }
+    .bar-wrap { width:100%; display:flex; flex-direction:column; justify-content:flex-end; height:140px; }
+    .bar { width:100%; border-radius:6px 6px 0 0; transition:height 0.4s ease; min-height:4px; }
+    .bar-paper { background:#3b82f6; }
+    .bar-bottles { background:var(--green); }
+    .bar-compost { background:#f59e0b; }
+    .bar-mixed { background:#a855f7; }
+    .bar-lbl { font-size:0.7rem; color:var(--text-muted); font-weight:600; }
+    .bar-val { font-size:0.72rem; color:var(--text); font-weight:700; }
+    .chart-legend { display:flex; gap:16px; margin-top:12px; flex-wrap:wrap; }
+    .legend-item { display:flex; align-items:center; gap:6px; font-size:0.78rem; color:var(--text-muted); }
+    .legend-dot { width:10px; height:10px; border-radius:50%; }
+
+    /* TWO-COL */
+    .two-col { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px; }
+    .three-col { display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px; margin-bottom:20px; }
+
+    /* PROGRESS */
+    .progress-label { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+    .progress-label span:first-child { font-size:0.82rem; font-weight:600; color:var(--text); }
+    .progress-label span:last-child { font-size:0.78rem; color:var(--text-muted); }
+    .progress-bar { height:8px; background:var(--bg); border-radius:100px; overflow:hidden; margin-bottom:14px; }
+    .progress-fill { height:100%; border-radius:100px; transition:width 0.6s ease; }
+    .fill-green { background:var(--green); }
+    .fill-blue { background:#3b82f6; }
+    .fill-amber { background:#f59e0b; }
+
+    /* GOAL SECTION */
+    .goal-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+    .goal-item { background:var(--green-lighter); border:1px solid var(--green-border); border-radius:var(--radius); padding:16px; text-align:center; }
+    .goal-icon { font-size:1.8rem; margin-bottom:8px; }
+    .goal-val { font-size:1.4rem; font-weight:800; color:var(--green); }
+    .goal-lbl { font-size:0.75rem; color:var(--text-muted); margin-top:2px; }
+
+    .empty-state { text-align:center; padding:40px; color:var(--text-muted); font-size:0.9rem; }
+    .empty-state .icon { font-size:2.5rem; margin-bottom:10px; }
+
+    @media(max-width:768px) {
+      .stat-grid { grid-template-columns:repeat(2,1fr); }
+      .log-grid { grid-template-columns:1fr 1fr; }
+      .two-col, .three-col { grid-template-columns:1fr; }
+      .goal-grid { grid-template-columns:repeat(3,1fr); }
+      .nav-links { display:none; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="homepage.html" class="nav-logo">Green Roots</a>
+  <ul class="nav-links">
+    <li><a href="homepage.html">Home</a></li>
+    <li><a href="tracker.html" class="active">Tracker</a></li>
+    <li><a href="leaderboard.html">Leaderboard</a></li>
+    <li><a href="impact.html">Impact</a></li>
+    <li><a href="quiz.html">Quiz</a></li>
+    <li><a href="dashboard.html">Dashboard</a></li>
+  </ul>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <div class="page-eyebrow">♻️ Campus Tracker</div>
+    <h1>Log Your Recycling</h1>
+    <p>Record what you've sorted and watch the campus total climb.</p>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- STATS -->
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-num" id="stat-total">0</div>
+      <div class="stat-lbl">lbs logged today</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="stat-week">0</div>
+      <div class="stat-lbl">lbs this week</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="stat-entries">0</div>
+      <div class="stat-lbl">total entries</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="stat-streak">0🔥</div>
+      <div class="stat-lbl">day streak</div>
+    </div>
+  </div>
+
+  <!-- LOG FORM -->
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-title">Log a recycling drop</div>
+    <div class="card-sub">Fill in what you sorted and we'll add it to your record.</div>
+    <div class="log-grid">
+      <div class="form-group">
+        <label>Your name</label>
+        <input type="text" id="log-name" placeholder="Full name" />
+      </div>
+      <div class="form-group">
+        <label>Stream</label>
+        <select id="log-stream">
+          <option value="">Select stream</option>
+          <option value="paper">📘 Paper</option>
+          <option value="bottles">🍃 Bottles & Cans</option>
+          <option value="compost">🟤 Compost</option>
+          <option value="mixed">🟣 Mixed / Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Weight (lbs)</label>
+        <input type="number" id="log-weight" placeholder="e.g. 2.5" min="0.1" step="0.1" />
+      </div>
+      <button class="btn-log" onclick="addEntry()">+ Log it</button>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <!-- WEEKLY CHART -->
+    <div class="card">
+      <div class="card-title">This week</div>
+      <div class="card-sub">Daily recycling totals (lbs)</div>
+      <div class="chart-area" id="week-chart"></div>
+      <div class="chart-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>Paper</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#16a34a"></div>Bottles & Cans</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>Compost</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#a855f7"></div>Other</div>
+      </div>
+    </div>
+
+    <!-- GOALS -->
+    <div class="card">
+      <div class="card-title">Monthly goals</div>
+      <div class="card-sub">Track progress toward campus targets</div>
+      <div style="margin-top:8px;">
+        <div class="progress-label"><span>Paper recycling</span><span id="prog-paper-lbl">0 / 50 lbs</span></div>
+        <div class="progress-bar"><div class="progress-fill fill-blue" id="prog-paper" style="width:0%"></div></div>
+        <div class="progress-label"><span>Bottles & Cans</span><span id="prog-bottles-lbl">0 / 80 lbs</span></div>
+        <div class="progress-bar"><div class="progress-fill fill-green" id="prog-bottles" style="width:0%"></div></div>
+        <div class="progress-label"><span>Compost</span><span id="prog-compost-lbl">0 / 100 lbs</span></div>
+        <div class="progress-bar"><div class="progress-fill fill-amber" id="prog-compost" style="width:0%"></div></div>
+      </div>
+      <div class="goal-grid" style="margin-top:20px;">
+        <div class="goal-item"><div class="goal-icon">🌳</div><div class="goal-val" id="trees-saved">0</div><div class="goal-lbl">trees saved</div></div>
+        <div class="goal-item"><div class="goal-icon">💧</div><div class="goal-val" id="water-saved">0</div><div class="goal-lbl">gals water</div></div>
+        <div class="goal-item"><div class="goal-icon">⚡</div><div class="goal-val" id="co2-saved">0</div><div class="goal-lbl">lbs CO₂</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOG TABLE -->
+  <div class="card">
+    <div class="card-title">Recycling log</div>
+    <div class="card-sub">Every entry your class has submitted</div>
+    <div class="log-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Stream</th>
+            <th>Weight</th>
+            <th>Date</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="log-body">
+          <tr><td colspan="5"><div class="empty-state"><div class="icon">📋</div>No entries yet — log your first drop above!</div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<script>
+  const STREAM_LABELS = { paper:'📘 Paper', bottles:'🍃 Bottles & Cans', compost:'🟤 Compost', mixed:'🟣 Mixed' };
+  const STREAM_BADGE  = { paper:'badge-paper', bottles:'badge-bottles', compost:'badge-compost', mixed:'badge-mixed' };
+  const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const GOALS = { paper:50, bottles:80, compost:100 };
+
+  let entries = JSON.parse(localStorage.getItem('gr_tracker') || '[]');
+
+  // Seed some sample data if empty
+  if (entries.length === 0) {
+    const now = Date.now();
+    const day = 86400000;
+    entries = [
+      { id:1, name:'Mr. Trink', stream:'paper',   weight:4.2, date: now - 6*day },
+      { id:2, name:'Alex Kim',  stream:'bottles', weight:3.1, date: now - 5*day },
+      { id:3, name:'Jordan Lee',stream:'compost', weight:7.5, date: now - 4*day },
+      { id:4, name:'Sam Rivera',stream:'paper',   weight:2.8, date: now - 3*day },
+      { id:5, name:'Taylor M.', stream:'bottles', weight:5.0, date: now - 2*day },
+      { id:6, name:'Chris W.',  stream:'compost', weight:6.3, date: now - 1*day },
+    ];
+    save();
+  }
+
+  function save() { localStorage.setItem('gr_tracker', JSON.stringify(entries)); }
+
+  function addEntry() {
+    const name   = document.getElementById('log-name').value.trim();
+    const stream = document.getElementById('log-stream').value;
+    const weight = parseFloat(document.getElementById('log-weight').value);
+    if (!name)            { alert('Please enter your name.'); return; }
+    if (!stream)          { alert('Please select a stream.'); return; }
+    if (!weight || weight <= 0) { alert('Please enter a valid weight.'); return; }
+    entries.unshift({ id: Date.now(), name, stream, weight, date: Date.now() });
+    save();
+    render();
+    document.getElementById('log-name').value   = '';
+    document.getElementById('log-stream').value = '';
+    document.getElementById('log-weight').value = '';
+  }
+
+  function deleteEntry(id) {
+    entries = entries.filter(e => e.id !== id);
+    save(); render();
+  }
+
+  function render() {
+    renderTable();
+    renderStats();
+    renderChart();
+    renderProgress();
+  }
+
+  function renderTable() {
+    const tbody = document.getElementById('log-body');
+    if (entries.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><div class="icon">📋</div>No entries yet — log your first drop above!</div></td></tr>';
+      return;
+    }
+    tbody.innerHTML = entries.map(e => {
+      const d = new Date(e.date);
+      const dateStr = d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+      return `<tr>
+        <td><strong>${esc(e.name)}</strong></td>
+        <td><span class="badge ${STREAM_BADGE[e.stream]}">${STREAM_LABELS[e.stream]}</span></td>
+        <td><strong>${e.weight.toFixed(1)}</strong> lbs</td>
+        <td>${dateStr}</td>
+        <td><button class="del-btn" onclick="deleteEntry(${e.id})" title="Remove">✕</button></td>
+      </tr>`;
+    }).join('');
+  }
+
+  function renderStats() {
+    const today = new Date(); today.setHours(0,0,0,0);
+    const weekAgo = today.getTime() - 7*86400000;
+    const todayTotal = entries.filter(e => new Date(e.date) >= today).reduce((s,e)=>s+e.weight,0);
+    const weekTotal  = entries.filter(e => e.date >= weekAgo).reduce((s,e)=>s+e.weight,0);
+    document.getElementById('stat-total').textContent   = todayTotal.toFixed(1);
+    document.getElementById('stat-week').textContent    = weekTotal.toFixed(1);
+    document.getElementById('stat-entries').textContent = entries.length;
+    // streak: consecutive days with at least one entry
+    const daySet = new Set(entries.map(e => { const d=new Date(e.date); d.setHours(0,0,0,0); return d.getTime(); }));
+    let streak = 0, cur = today.getTime();
+    while (daySet.has(cur)) { streak++; cur -= 86400000; }
+    document.getElementById('stat-streak').textContent = streak + '🔥';
+  }
+
+  function renderChart() {
+    const container = document.getElementById('week-chart');
+    const today = new Date(); today.setHours(0,0,0,0);
+    const days = [];
+    for (let i=6; i>=0; i--) {
+      const d = new Date(today.getTime() - i*86400000);
+      const label = DAYS[d.getDay()];
+      const dayEntries = entries.filter(e => {
+        const ed = new Date(e.date); ed.setHours(0,0,0,0);
+        return ed.getTime() === d.getTime();
+      });
+      const total = dayEntries.reduce((s,e)=>s+e.weight,0);
+      days.push({ label, total, dayEntries });
+    }
+    const max = Math.max(...days.map(d=>d.total), 1);
+    container.innerHTML = days.map(d => {
+      const pct = (d.total / max) * 100;
+      const colorMap = { paper:'#3b82f6', bottles:'#16a34a', compost:'#f59e0b', mixed:'#a855f7' };
+      // Stack segments
+      let segments = '';
+      const streams = ['paper','bottles','compost','mixed'];
+      let cumPct = 0;
+      streams.forEach(s => {
+        const sw = d.dayEntries.filter(e=>e.stream===s).reduce((a,e)=>a+e.weight,0);
+        const sp = (sw/max)*100;
+        if (sp > 0) {
+          segments += `<div class="bar bar-${s}" style="height:${sp}%"></div>`;
+          cumPct += sp;
+        }
+      });
+      if (d.total === 0) segments = `<div class="bar" style="height:4px;background:var(--border)"></div>`;
+      return `<div class="bar-col">
+        <div class="bar-val">${d.total > 0 ? d.total.toFixed(1) : ''}</div>
+        <div class="bar-wrap" style="display:flex;flex-direction:column;justify-content:flex-end;height:120px;">${segments}</div>
+        <div class="bar-lbl">${d.label}</div>
+      </div>`;
+    }).join('');
+  }
+
+  function renderProgress() {
+    const totals = { paper:0, bottles:0, compost:0 };
+    entries.forEach(e => { if (totals[e.stream] !== undefined) totals[e.stream] += e.weight; });
+    ['paper','bottles','compost'].forEach(s => {
+      const pct = Math.min((totals[s] / GOALS[s]) * 100, 100);
+      document.getElementById(`prog-${s}`).style.width = pct + '%';
+      document.getElementById(`prog-${s}-lbl`).textContent = `${totals[s].toFixed(1)} / ${GOALS[s]} lbs`;
+    });
+    const totalAll = Object.values(totals).reduce((a,b)=>a+b,0);
+    document.getElementById('trees-saved').textContent  = (totalAll / 100).toFixed(1);
+    document.getElementById('water-saved').textContent  = Math.round(totalAll * 7.4);
+    document.getElementById('co2-saved').textContent    = (totalAll * 0.8).toFixed(1);
+  }
+
+  function esc(s) { return s.replace(/[<>&"]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c])); }
+
+  render();
+</script>
+</body>
+</html>

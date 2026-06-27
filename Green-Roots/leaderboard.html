@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Leaderboard — Green Roots</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --green: #16a34a; --green-dark: #14532d; --green-med: #15803d;
+      --green-light: #dcfce7; --green-lighter: #f0fdf4; --green-border: #bbf7d0;
+      --text: #111827; --text-mid: #374151; --text-muted: #6b7280;
+      --white: #fff; --bg: #f9fafb; --border: #e5e7eb;
+      --gold: #f59e0b; --silver: #9ca3af; --bronze: #b45309;
+      --radius: 12px; --radius-lg: 16px;
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: var(--text); background: var(--bg); }
+
+    nav { position:sticky; top:0; z-index:100; background:rgba(255,255,255,0.96); backdrop-filter:blur(8px); border-bottom:1px solid var(--border); padding:0 24px; height:64px; display:flex; align-items:center; justify-content:space-between; }
+    .nav-logo { font-size:1.15rem; font-weight:800; color:var(--green); text-decoration:none; }
+    .nav-logo::before { content:"🌱 "; }
+    .nav-links { display:flex; gap:4px; list-style:none; }
+    .nav-links a { color:var(--text-mid); text-decoration:none; font-size:0.875rem; padding:6px 10px; border-radius:6px; transition:all 0.15s; }
+    .nav-links a:hover, .nav-links a.active { color:var(--green); background:var(--green-lighter); }
+    .nav-links a.active { font-weight:600; }
+
+    .page-header { background:linear-gradient(135deg,#f0fdf4,#dcfce7); padding:48px 24px 40px; border-bottom:1px solid var(--green-border); }
+    .page-header-inner { max-width:1100px; margin:0 auto; display:flex; align-items:flex-end; justify-content:space-between; flex-wrap:wrap; gap:20px; }
+    .page-eyebrow { font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--green); margin-bottom:10px; }
+    .page-header h1 { font-size:2.2rem; font-weight:800; color:var(--text); margin-bottom:8px; }
+    .page-header p { color:var(--text-muted); font-size:1rem; }
+    .tab-row { display:flex; gap:8px; }
+    .tab-btn { padding:8px 18px; border:1px solid var(--border); background:var(--white); border-radius:100px; font-size:0.85rem; font-weight:600; cursor:pointer; font-family:inherit; color:var(--text-muted); transition:all 0.15s; }
+    .tab-btn.active { background:var(--green); color:#fff; border-color:var(--green); }
+
+    .main { max-width:1100px; margin:0 auto; padding:32px 24px 64px; }
+
+    /* PODIUM */
+    .podium { display:flex; align-items:flex-end; justify-content:center; gap:16px; margin-bottom:40px; padding:32px 24px 0; }
+    .podium-place { display:flex; flex-direction:column; align-items:center; gap:8px; flex:1; max-width:200px; }
+    .podium-avatar { width:64px; height:64px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.8rem; font-weight:800; color:#fff; border:3px solid transparent; position:relative; }
+    .podium-avatar.gold   { background:linear-gradient(135deg,#f59e0b,#fbbf24); border-color:#f59e0b; }
+    .podium-avatar.silver { background:linear-gradient(135deg,#9ca3af,#d1d5db); border-color:#9ca3af; }
+    .podium-avatar.bronze { background:linear-gradient(135deg,#b45309,#d97706); border-color:#b45309; }
+    .podium-crown { position:absolute; top:-18px; font-size:1.2rem; }
+    .podium-name { font-size:0.9rem; font-weight:700; color:var(--text); text-align:center; }
+    .podium-grade { font-size:0.75rem; color:var(--text-muted); }
+    .podium-score { font-size:1.3rem; font-weight:800; color:var(--green); }
+    .podium-score-lbl { font-size:0.7rem; color:var(--text-muted); }
+    .podium-block { border-radius:12px 12px 0 0; width:100%; display:flex; align-items:center; justify-content:center; font-size:2rem; font-weight:900; color:rgba(255,255,255,0.8); }
+    .podium-block.gold   { height:100px; background:linear-gradient(180deg,#fef3c7,#fde68a); color:#92400e; }
+    .podium-block.silver { height:75px; background:linear-gradient(180deg,#f3f4f6,#e5e7eb); color:#6b7280; }
+    .podium-block.bronze { height:55px; background:linear-gradient(180deg,#fef3c7,#fdba74); color:#92400e; }
+
+    /* LEADERBOARD TABLE */
+    .lb-card { background:var(--white); border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; }
+    .lb-table { width:100%; border-collapse:collapse; }
+    .lb-table thead th { text-align:left; padding:14px 20px; font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted); background:var(--bg); border-bottom:1px solid var(--border); }
+    .lb-table tbody td { padding:16px 20px; border-bottom:1px solid var(--border); }
+    .lb-table tbody tr:last-child td { border-bottom:none; }
+    .lb-table tbody tr:hover td { background:var(--green-lighter); }
+    .lb-table tbody tr.my-row td { background:#f0fdf4; }
+    .rank-num { font-size:1rem; font-weight:800; color:var(--text-muted); width:40px; }
+    .rank-1 .rank-num { color:var(--gold); }
+    .rank-2 .rank-num { color:var(--silver); }
+    .rank-3 .rank-num { color:var(--bronze); }
+    .lb-avatar { width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1rem; font-weight:700; color:#fff; margin-right:12px; flex-shrink:0; }
+    .lb-name-col { display:flex; align-items:center; }
+    .lb-name { font-weight:700; font-size:0.95rem; }
+    .lb-meta { font-size:0.78rem; color:var(--text-muted); margin-top:1px; }
+    .lb-score { font-size:1.1rem; font-weight:800; color:var(--green); }
+    .lb-score-sub { font-size:0.75rem; color:var(--text-muted); }
+    .lb-bar-wrap { width:120px; height:6px; background:var(--bg); border-radius:100px; overflow:hidden; }
+    .lb-bar-fill { height:100%; border-radius:100px; background:var(--green); transition:width 0.6s ease; }
+    .badge-grade { display:inline-flex; padding:3px 10px; border-radius:100px; font-size:0.72rem; font-weight:700; background:var(--green-light); color:var(--green-dark); }
+    .trend-up { color:#16a34a; font-size:0.8rem; }
+    .trend-down { color:#ef4444; font-size:0.8rem; }
+    .trend-same { color:var(--text-muted); font-size:0.8rem; }
+
+    /* GRADE BATTLE */
+    .grade-battle { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:28px; }
+    .grade-card { background:var(--white); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px; text-align:center; transition:box-shadow 0.2s, transform 0.2s; }
+    .grade-card:hover { box-shadow:0 4px 20px rgba(22,163,74,0.12); transform:translateY(-2px); }
+    .grade-card.leader { border-color:var(--green); background:var(--green-lighter); }
+    .grade-name { font-size:1.4rem; font-weight:800; color:var(--text); margin-bottom:4px; }
+    .grade-lbs { font-size:1.6rem; font-weight:800; color:var(--green); }
+    .grade-lbl { font-size:0.75rem; color:var(--text-muted); margin-bottom:12px; }
+    .grade-prog-wrap { height:8px; background:var(--bg); border-radius:100px; overflow:hidden; }
+    .grade-prog-fill { height:100%; background:var(--green); border-radius:100px; transition:width 0.6s ease; }
+    .crown-badge { display:inline-block; font-size:0.75rem; background:#fef3c7; color:#92400e; border:1px solid #fde68a; border-radius:100px; padding:2px 10px; margin-bottom:8px; font-weight:700; }
+
+    .section-title { font-size:1.2rem; font-weight:800; color:var(--text); margin-bottom:16px; }
+
+    /* FILTER */
+    .filter-row { display:flex; align-items:center; gap:12px; margin-bottom:20px; flex-wrap:wrap; }
+    .filter-row select { padding:8px 12px; border:1px solid var(--border); border-radius:8px; font-size:0.85rem; font-family:inherit; color:var(--text); background:var(--white); outline:none; }
+    .search-box { padding:8px 14px; border:1px solid var(--border); border-radius:8px; font-size:0.85rem; font-family:inherit; outline:none; flex:1; min-width:160px; }
+    .search-box:focus { border-color:var(--green); box-shadow:0 0 0 3px rgba(22,163,74,0.1); }
+
+    @media(max-width:768px) { .grade-battle{grid-template-columns:repeat(2,1fr);} .podium{gap:8px;} .nav-links{display:none;} }
+  </style>
+</head>
+<body>
+<nav>
+  <a href="homepage.html" class="nav-logo">Green Roots</a>
+  <ul class="nav-links">
+    <li><a href="homepage.html">Home</a></li>
+    <li><a href="tracker.html">Tracker</a></li>
+    <li><a href="leaderboard.html" class="active">Leaderboard</a></li>
+    <li><a href="impact.html">Impact</a></li>
+    <li><a href="quiz.html">Quiz</a></li>
+    <li><a href="dashboard.html">Dashboard</a></li>
+  </ul>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <div>
+      <div class="page-eyebrow">🏆 Rankings</div>
+      <h1>Leaderboard</h1>
+      <p>Who's leading the charge this quarter? See students and grades ranked by lbs recycled.</p>
+    </div>
+    <div class="tab-row">
+      <button class="tab-btn active" onclick="switchView('students',this)">Students</button>
+      <button class="tab-btn" onclick="switchView('grades',this)">Grades</button>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- GRADE BATTLE (always shown) -->
+  <div class="section-title">Grade Battle — Spring Quarter</div>
+  <div class="grade-battle" id="grade-battle"></div>
+
+  <!-- STUDENTS VIEW -->
+  <div id="view-students">
+    <div class="podium" id="podium"></div>
+    <div class="filter-row">
+      <input class="search-box" id="search-box" placeholder="🔍 Search by name..." oninput="renderStudents()" />
+      <select id="filter-grade" onchange="renderStudents()">
+        <option value="">All grades</option>
+        <option>9th</option><option>10th</option><option>11th</option><option>12th</option><option>Staff</option>
+      </select>
+      <select id="filter-stream" onchange="renderStudents()">
+        <option value="">All streams</option>
+        <option value="paper">Paper</option>
+        <option value="bottles">Bottles & Cans</option>
+        <option value="compost">Compost</option>
+      </select>
+    </div>
+    <div class="lb-card">
+      <table class="lb-table">
+        <thead>
+          <tr><th>#</th><th>Student</th><th>Grade</th><th>Total</th><th>Progress</th><th>Trend</th></tr>
+        </thead>
+        <tbody id="lb-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- GRADES VIEW -->
+  <div id="view-grades" style="display:none;">
+    <div class="lb-card">
+      <table class="lb-table">
+        <thead>
+          <tr><th>#</th><th>Grade</th><th>Students</th><th>Total lbs</th><th>Progress</th><th>Avg / student</th></tr>
+        </thead>
+        <tbody id="lb-grades-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const COLORS = ['#16a34a','#3b82f6','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899','#14b8a6','#f97316','#6366f1'];
+const AVATAR_COLORS = COLORS;
+
+const SAMPLE_STUDENTS = [
+  {name:'Jordan Rivera',   grade:'11th', paper:12.4, bottles:8.2,  compost:15.1, trend:'up'},
+  {name:'Taylor Kim',      grade:'10th', paper:9.1,  bottles:14.3, compost:7.5,  trend:'up'},
+  {name:'Alex Chen',       grade:'12th', paper:5.5,  bottles:11.0, compost:18.2, trend:'same'},
+  {name:'Morgan Patel',    grade:'9th',  paper:14.0, bottles:6.8,  compost:9.3,  trend:'up'},
+  {name:'Casey Williams',  grade:'11th', paper:7.3,  bottles:9.5,  compost:12.0, trend:'down'},
+  {name:'Sam Johnson',     grade:'12th', paper:11.2, bottles:4.1,  compost:10.5, trend:'up'},
+  {name:'Drew Martinez',   grade:'10th', paper:3.8,  bottles:13.7, compost:6.2,  trend:'same'},
+  {name:'Robin Davis',     grade:'9th',  paper:8.6,  bottles:7.9,  compost:11.8, trend:'up'},
+  {name:'Quinn Thompson',  grade:'Staff',paper:6.0,  bottles:10.2, compost:8.7,  trend:'down'},
+  {name:'Blake Anderson',  grade:'11th', paper:4.5,  bottles:5.3,  compost:13.9, trend:'up'},
+  {name:'Avery Wilson',    grade:'10th', paper:10.1, bottles:3.6,  compost:7.4,  trend:'same'},
+  {name:'Jesse Brown',     grade:'12th', paper:2.9,  bottles:8.8,  compost:10.1, trend:'down'},
+  {name:'Mr. Trink',       grade:'Staff',paper:16.0, bottles:5.0,  compost:4.0,  trend:'same'},
+];
+
+// Merge with tracker data
+function getStudents() {
+  const entries = JSON.parse(localStorage.getItem('gr_tracker') || '[]');
+  const map = {};
+  SAMPLE_STUDENTS.forEach(s => {
+    const k = s.name.toLowerCase();
+    map[k] = { name:s.name, grade:s.grade, paper:s.paper, bottles:s.bottles, compost:s.compost, trend:s.trend };
+  });
+  entries.forEach(e => {
+    const k = e.name.toLowerCase();
+    if (!map[k]) map[k] = { name:e.name, grade:'Unknown', paper:0, bottles:0, compost:0, trend:'up' };
+    map[k][e.stream] = (map[k][e.stream]||0) + e.weight;
+  });
+  return Object.values(map).map(s => ({ ...s, total: (s.paper||0)+(s.bottles||0)+(s.compost||0) })).sort((a,b)=>b.total-a.total);
+}
+
+function initials(name) { return name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase(); }
+
+function renderPodium(students) {
+  const top3 = students.slice(0,3);
+  const order = [1,0,2]; // silver, gold, bronze
+  const classes = ['silver','gold','bronze'];
+  const crowns = ['','👑',''];
+  const heights = [75,100,55];
+  const rankLabels = ['2nd','1st','3rd'];
+  const podium = document.getElementById('podium');
+  if (students.length < 3) { podium.innerHTML = ''; return; }
+  podium.innerHTML = order.map(i => {
+    const s = top3[i];
+    const col = AVATAR_COLORS[i];
+    return `<div class="podium-place">
+      <div class="podium-avatar ${classes[i]}">${crowns[i]?`<div class="podium-crown">${crowns[i]}</div>`:''}${initials(s.name)}</div>
+      <div class="podium-name">${s.name}</div>
+      <div class="podium-grade">${s.grade}</div>
+      <div class="podium-score">${s.total.toFixed(1)}</div>
+      <div class="podium-score-lbl">lbs recycled</div>
+      <div class="podium-block ${classes[i]}">${rankLabels[i]}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderStudents() {
+  const students = getStudents();
+  const search = document.getElementById('search-box').value.toLowerCase();
+  const grade  = document.getElementById('filter-grade').value;
+  const stream = document.getElementById('filter-stream').value;
+  let filtered = students;
+  if (search) filtered = filtered.filter(s => s.name.toLowerCase().includes(search));
+  if (grade)  filtered = filtered.filter(s => s.grade === grade);
+  renderPodium(filtered);
+  const max = filtered[0]?.total || 1;
+  const tbody = document.getElementById('lb-body');
+  const trendIcon = { up:'<span class="trend-up">▲</span>', down:'<span class="trend-down">▼</span>', same:'<span class="trend-same">—</span>' };
+  tbody.innerHTML = filtered.map((s,i) => {
+    const col = AVATAR_COLORS[i % AVATAR_COLORS.length];
+    const pct = (s.total/max*100).toFixed(0);
+    const rankClass = i<3 ? `rank-${i+1}` : '';
+    return `<tr class="${rankClass}">
+      <td><div class="rank-num">${i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1}</div></td>
+      <td><div class="lb-name-col">
+        <div class="lb-avatar" style="background:${col}">${initials(s.name)}</div>
+        <div><div class="lb-name">${s.name}</div><div class="lb-meta">${s.paper.toFixed(1)} paper · ${s.bottles.toFixed(1)} bottles · ${s.compost.toFixed(1)} compost</div></div>
+      </div></td>
+      <td><span class="badge-grade">${s.grade}</span></td>
+      <td><div class="lb-score">${s.total.toFixed(1)}</div><div class="lb-score-sub">lbs total</div></td>
+      <td><div class="lb-bar-wrap"><div class="lb-bar-fill" style="width:${pct}%"></div></div></td>
+      <td>${trendIcon[s.trend]||'—'}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted);">No results found.</td></tr>';
+}
+
+function renderGradeBattle() {
+  const students = getStudents();
+  const grades = {};
+  students.forEach(s => {
+    const g = s.grade === 'Staff' ? 'Staff' : s.grade;
+    if (!grades[g]) grades[g] = { name:g, total:0, students:0 };
+    grades[g].total += s.total; grades[g].students++;
+  });
+  const gradeList = Object.values(grades).sort((a,b)=>b.total-a.total);
+  const maxG = gradeList[0]?.total || 1;
+
+  // Grade battle cards
+  const order4 = ['9th','10th','11th','12th'];
+  const battle = document.getElementById('grade-battle');
+  battle.innerHTML = order4.map((g,i) => {
+    const gd = grades[g] || { name:g, total:0, students:0 };
+    const pct = (gd.total/maxG*100).toFixed(0);
+    const isLeader = gradeList[0]?.name === g;
+    return `<div class="grade-card ${isLeader?'leader':''}">
+      ${isLeader ? '<div class="crown-badge">👑 Leading</div>' : ''}
+      <div class="grade-name">${g}</div>
+      <div class="grade-lbs">${gd.total.toFixed(1)}</div>
+      <div class="grade-lbl">lbs recycled</div>
+      <div class="grade-prog-wrap"><div class="grade-prog-fill" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join('');
+
+  // Grade leaderboard table
+  const tbody = document.getElementById('lb-grades-body');
+  tbody.innerHTML = gradeList.map((g,i) => {
+    const pct = (g.total/maxG*100).toFixed(0);
+    const avg = g.students > 0 ? (g.total/g.students).toFixed(1) : '0';
+    return `<tr class="${i<3?'rank-'+(i+1):''}">
+      <td><div class="rank-num">${i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1}</div></td>
+      <td><strong style="font-size:1.1rem">${g.name} grade</strong></td>
+      <td>${g.students} students</td>
+      <td><div class="lb-score">${g.total.toFixed(1)}</div><div class="lb-score-sub">lbs total</div></td>
+      <td><div class="lb-bar-wrap" style="width:160px"><div class="lb-bar-fill" style="width:${pct}%"></div></div></td>
+      <td><strong>${avg}</strong> lbs/student</td>
+    </tr>`;
+  }).join('');
+}
+
+function switchView(view, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('view-students').style.display = view==='students' ? '' : 'none';
+  document.getElementById('view-grades').style.display   = view==='grades'   ? '' : 'none';
+}
+
+renderGradeBattle();
+renderStudents();
+</script>
+</body>
+</html>

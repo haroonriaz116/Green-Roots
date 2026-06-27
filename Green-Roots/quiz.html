@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Recycling Quiz — Green Roots</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --green: #16a34a; --green-dark: #14532d; --green-med: #15803d;
+      --green-light: #dcfce7; --green-lighter: #f0fdf4; --green-border: #bbf7d0;
+      --text: #111827; --text-mid: #374151; --text-muted: #6b7280;
+      --white: #fff; --bg: #f9fafb; --border: #e5e7eb;
+      --red-bg: #fee2e2; --red: #ef4444; --red-border: #fecaca;
+      --radius: 12px; --radius-lg: 16px;
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: var(--text); background: var(--bg); }
+
+    nav { position:sticky; top:0; z-index:100; background:rgba(255,255,255,0.96); backdrop-filter:blur(8px); border-bottom:1px solid var(--border); padding:0 24px; height:64px; display:flex; align-items:center; justify-content:space-between; }
+    .nav-logo { font-size:1.15rem; font-weight:800; color:var(--green); text-decoration:none; }
+    .nav-logo::before { content:"🌱 "; }
+    .nav-links { display:flex; gap:4px; list-style:none; }
+    .nav-links a { color:var(--text-mid); text-decoration:none; font-size:0.875rem; padding:6px 10px; border-radius:6px; transition:all 0.15s; }
+    .nav-links a:hover, .nav-links a.active { color:var(--green); background:var(--green-lighter); }
+    .nav-links a.active { font-weight:600; }
+
+    .page-header { background:linear-gradient(135deg,#f0fdf4,#dcfce7); padding:48px 24px 40px; border-bottom:1px solid var(--green-border); }
+    .page-header-inner { max-width:760px; margin:0 auto; text-align:center; }
+    .page-eyebrow { font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--green); margin-bottom:10px; }
+    .page-header h1 { font-size:2.2rem; font-weight:800; color:var(--text); margin-bottom:8px; }
+    .page-header p { color:var(--text-muted); font-size:1rem; }
+
+    .main { max-width:760px; margin:0 auto; padding:40px 24px 64px; }
+
+    /* PROGRESS BAR */
+    .quiz-progress { margin-bottom:32px; }
+    .progress-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+    .progress-label { font-size:0.82rem; font-weight:600; color:var(--text-muted); }
+    .progress-score { font-size:0.82rem; font-weight:700; color:var(--green); }
+    .progress-track { height:8px; background:var(--border); border-radius:100px; overflow:hidden; }
+    .progress-fill { height:100%; background:var(--green); border-radius:100px; transition:width 0.4s ease; }
+
+    /* QUESTION CARD */
+    .q-card { background:var(--white); border:1px solid var(--border); border-radius:var(--radius-lg); padding:36px; margin-bottom:20px; }
+    .q-category { display:inline-flex; align-items:center; gap:6px; padding:4px 12px; border-radius:100px; font-size:0.75rem; font-weight:700; background:var(--green-light); color:var(--green-dark); margin-bottom:16px; }
+    .q-text { font-size:1.3rem; font-weight:700; color:var(--text); line-height:1.4; margin-bottom:28px; }
+    .q-image { width:100%; height:180px; object-fit:cover; border-radius:var(--radius); margin-bottom:20px; }
+    .q-image-placeholder { width:100%; height:120px; border-radius:var(--radius); background:linear-gradient(135deg,#dcfce7,#bbf7d0); display:flex; align-items:center; justify-content:center; font-size:3rem; margin-bottom:20px; }
+
+    /* ANSWERS */
+    .answers { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .answer-btn {
+      padding:16px 20px; border:2px solid var(--border); background:var(--white);
+      border-radius:var(--radius); font-size:0.95rem; font-weight:600; cursor:pointer;
+      font-family:inherit; color:var(--text); text-align:left;
+      transition:border-color 0.15s, background 0.15s, transform 0.1s;
+      display:flex; align-items:center; gap:12px;
+    }
+    .answer-btn:hover:not(:disabled) { border-color:var(--green); background:var(--green-lighter); transform:translateY(-1px); }
+    .answer-btn.correct { border-color:var(--green); background:var(--green-light); color:var(--green-dark); }
+    .answer-btn.incorrect { border-color:var(--red); background:var(--red-bg); color:var(--red); }
+    .answer-btn.reveal-correct { border-color:var(--green); background:var(--green-light); animation:pulse 0.4s; }
+    .answer-btn:disabled { cursor:default; }
+    .answer-letter { width:28px; height:28px; border-radius:50%; background:var(--bg); display:flex; align-items:center; justify-content:center; font-size:0.8rem; font-weight:800; flex-shrink:0; }
+    .answer-btn.correct .answer-letter { background:var(--green); color:#fff; }
+    .answer-btn.incorrect .answer-letter { background:var(--red); color:#fff; }
+    .answer-btn.reveal-correct .answer-letter { background:var(--green); color:#fff; }
+    @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.02)} }
+
+    /* FEEDBACK */
+    .feedback { margin-top:16px; padding:16px 20px; border-radius:var(--radius); font-size:0.9rem; line-height:1.5; display:none; }
+    .feedback.correct { background:var(--green-light); border:1px solid var(--green-border); color:var(--green-dark); }
+    .feedback.incorrect { background:var(--red-bg); border:1px solid var(--red-border); color:#991b1b; }
+    .feedback-icon { font-size:1.1rem; margin-right:6px; }
+
+    /* NEXT BTN */
+    .next-btn { width:100%; padding:14px; background:var(--green); color:#fff; border:none; border-radius:var(--radius); font-size:1rem; font-weight:700; cursor:pointer; font-family:inherit; transition:background 0.2s; margin-top:8px; display:none; }
+    .next-btn:hover { background:var(--green-med); }
+
+    /* RESULTS */
+    .results { display:none; background:var(--white); border:1px solid var(--border); border-radius:var(--radius-lg); padding:48px; text-align:center; }
+    .result-emoji { font-size:4rem; margin-bottom:16px; }
+    .result-score { font-size:3.5rem; font-weight:900; color:var(--green); margin-bottom:4px; }
+    .result-label { font-size:1.1rem; color:var(--text-muted); margin-bottom:28px; }
+    .result-message { font-size:1.2rem; font-weight:700; color:var(--text); margin-bottom:8px; }
+    .result-sub { font-size:0.95rem; color:var(--text-muted); margin-bottom:32px; }
+    .result-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:32px; }
+    .result-stat { background:var(--bg); border-radius:var(--radius); padding:16px; }
+    .result-stat-num { font-size:1.5rem; font-weight:800; color:var(--green); }
+    .result-stat-lbl { font-size:0.75rem; color:var(--text-muted); }
+    .btn-retry { padding:13px 32px; background:var(--green); color:#fff; border:none; border-radius:var(--radius); font-size:1rem; font-weight:700; cursor:pointer; font-family:inherit; transition:background 0.2s; margin:6px; }
+    .btn-retry:hover { background:var(--green-med); }
+    .btn-home { padding:13px 32px; background:var(--white); color:var(--text); border:1px solid var(--border); border-radius:var(--radius); font-size:1rem; font-weight:600; cursor:pointer; font-family:inherit; text-decoration:none; display:inline-block; margin:6px; }
+
+    /* STREAK */
+    .streak-bar { display:flex; gap:6px; justify-content:center; margin-bottom:28px; flex-wrap:wrap; }
+    .streak-dot { width:32px; height:32px; border-radius:50%; border:2px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:700; color:var(--text-muted); }
+    .streak-dot.correct { background:var(--green); border-color:var(--green); color:#fff; }
+    .streak-dot.incorrect { background:var(--red); border-color:var(--red); color:#fff; }
+
+    @media(max-width:600px) { .answers{grid-template-columns:1fr;} .result-grid{grid-template-columns:repeat(3,1fr);} .nav-links{display:none;} }
+  </style>
+</head>
+<body>
+<nav>
+  <a href="homepage.html" class="nav-logo">Green Roots</a>
+  <ul class="nav-links">
+    <li><a href="homepage.html">Home</a></li>
+    <li><a href="tracker.html">Tracker</a></li>
+    <li><a href="leaderboard.html">Leaderboard</a></li>
+    <li><a href="impact.html">Impact</a></li>
+    <li><a href="quiz.html" class="active">Quiz</a></li>
+    <li><a href="dashboard.html">Dashboard</a></li>
+  </ul>
+</nav>
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <div class="page-eyebrow">🧠 Test Your Knowledge</div>
+    <h1>Recycling Quiz</h1>
+    <p>10 questions. Find out if you're a recycling rookie or a sorting superstar.</p>
+  </div>
+</div>
+
+<div class="main">
+  <div id="quiz-area">
+    <div class="quiz-progress">
+      <div class="progress-top">
+        <span class="progress-label" id="q-counter">Question 1 of 10</span>
+        <span class="progress-score" id="q-score">Score: 0</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="q-progress" style="width:10%"></div></div>
+    </div>
+    <div class="streak-bar" id="streak-bar"></div>
+    <div class="q-card">
+      <div class="q-category" id="q-category">♻️ Sorting Basics</div>
+      <div class="q-image-placeholder" id="q-image"></div>
+      <div class="q-text" id="q-text">Loading...</div>
+      <div class="answers" id="q-answers"></div>
+      <div class="feedback" id="q-feedback"></div>
+      <button class="next-btn" id="next-btn" onclick="nextQ()">Next question →</button>
+    </div>
+  </div>
+  <div class="results" id="results">
+    <div class="result-emoji" id="result-emoji">🌱</div>
+    <div class="result-score" id="result-score">0/10</div>
+    <div class="result-label">questions correct</div>
+    <div class="result-message" id="result-message">Great job!</div>
+    <div class="result-sub" id="result-sub">Keep recycling!</div>
+    <div class="streak-bar" id="result-streak" style="margin-bottom:24px;"></div>
+    <div class="result-grid">
+      <div class="result-stat"><div class="result-stat-num" id="res-correct">0</div><div class="result-stat-lbl">correct</div></div>
+      <div class="result-stat"><div class="result-stat-num" id="res-pct">0%</div><div class="result-stat-lbl">accuracy</div></div>
+      <div class="result-stat"><div class="result-stat-num" id="res-time">0s</div><div class="result-stat-lbl">avg time</div></div>
+    </div>
+    <button class="btn-retry" onclick="startQuiz()">Try again 🔄</button>
+    <a href="leaderboard.html" class="btn-home">See leaderboard →</a>
+  </div>
+</div>
+
+<script>
+const QUESTIONS = [
+  { category:'📘 Paper', icon:'📄', q:'Which of the following CANNOT go in the blue paper recycling bin?', answers:['Notebook paper','Cardboard box','Wet paper towels','Magazines'], correct:2, fact:'Wet paper breaks down the fiber structure and contaminates the batch. When in doubt, throw it out!' },
+  { category:'🍃 Bottles & Cans', icon:'🥤', q:'You have an empty plastic water bottle. What number plastics are accepted in the green bin?', answers:['All plastics #1–7','Plastic #1 and #2 only','Plastic #3 and #4 only','No plastics at all'], correct:1, fact:'Plastics #1 (PET) and #2 (HDPE) are the most widely recyclable. Numbers 3–7 often can\'t be processed at standard facilities.' },
+  { category:'🟤 Compost', icon:'🍎', q:'Which item belongs in the BROWN compost bin?', answers:['Plastic fork','Aluminum foil','Apple core','Candy wrapper'], correct:2, fact:'Food scraps like apple cores are perfect for composting! They break down into nutrient-rich soil amendment.' },
+  { category:'♻️ Sorting Basics', icon:'🤔', q:'What should you do when you\'re unsure which bin an item goes in?', answers:['Put it in whichever bin is closest','Throw it in the trash','Ask an eco-monitor or leave it out','Rinse it and try any bin'], correct:2, fact:'Contaminated recycling can ruin an entire batch. When in doubt, ask an eco-monitor in a green vest!' },
+  { category:'📊 Impact', icon:'🌍', q:'How much MORE do schools with commitment campaigns recycle?', answers:['5–10% more','15–20% more','About 40% more','No measurable difference'], correct:2, fact:'Research shows visible recycling commitments — like pledges — can boost participation by up to 40%. That\'s why your pledge matters!' },
+  { category:'🍃 Bottles & Cans', icon:'🥛', q:'Glass milk bottles are empty and rinsed. Where do they go?', answers:['Blue paper bin','Green bottles & cans bin','Brown compost bin','Regular trash'], correct:1, fact:'Clean glass bottles belong in the green bin! Rinsing removes food residue that can contaminate other recyclables.' },
+  { category:'📘 Paper', icon:'📦', q:'A greasy pizza box — where does it go?', answers:['Blue paper bin (it\'s cardboard!)','Brown compost bin','Regular trash','Green bottles & cans'], correct:2, fact:'Grease-soaked cardboard can\'t be recycled — the oil ruins the paper fibers. Tear off any clean top to recycle, and trash the greasy bottom.' },
+  { category:'🟤 Compost', icon:'☕', q:'Which of these IS compostable at Lincoln High?', answers:['Plastic wrapper','Paper lunch tray','Styrofoam cup','Aluminum can'], correct:1, fact:'Paper lunch trays from our cafeteria are certified compostable! Styrofoam is unfortunately not accepted in most composting programs.' },
+  { category:'♻️ Sorting Basics', icon:'🔢', q:'How many recycling streams does Lincoln High have?', answers:['1 — just one general bin','2 — paper and everything else','3 — paper, bottles & cans, compost','4 — we have special bins for glass too'], correct:2, fact:'Three streams! Blue for paper, green for bottles & cans, and brown for compost. Together they handle 95% of your daily waste.' },
+  { category:'📊 Impact', icon:'🌲', q:'Roughly how many lbs of paper does it take to save one tree?', answers:['About 10 lbs','About 25 lbs','About 100 lbs','About 500 lbs'], correct:2, fact:'It takes approximately 100 lbs of recycled paper to save one tree! Every notebook and cardboard box adds up.' },
+];
+
+let qIndex = 0, score = 0, answers = [], startTime = 0, totalTime = 0;
+
+function startQuiz() {
+  qIndex = 0; score = 0; answers = []; totalTime = 0;
+  document.getElementById('quiz-area').style.display = '';
+  document.getElementById('results').style.display = 'none';
+  renderQ();
+}
+
+function renderQ() {
+  const q = QUESTIONS[qIndex];
+  startTime = Date.now();
+  document.getElementById('q-counter').textContent = `Question ${qIndex+1} of ${QUESTIONS.length}`;
+  document.getElementById('q-score').textContent = `Score: ${score}`;
+  document.getElementById('q-progress').style.width = `${((qIndex+1)/QUESTIONS.length)*100}%`;
+  document.getElementById('q-category').textContent = q.category;
+  document.getElementById('q-image').textContent = q.icon;
+  document.getElementById('q-text').textContent = q.q;
+  document.getElementById('q-feedback').style.display = 'none';
+  document.getElementById('next-btn').style.display = 'none';
+
+  // Streak bar
+  const streakBar = document.getElementById('streak-bar');
+  streakBar.innerHTML = QUESTIONS.map((_,i) => {
+    let cls = '';
+    if (i < answers.length) cls = answers[i] ? 'correct' : 'incorrect';
+    return `<div class="streak-dot ${cls}">${i+1}</div>`;
+  }).join('');
+
+  const labels = ['A','B','C','D'];
+  document.getElementById('q-answers').innerHTML = q.answers.map((a,i) =>
+    `<button class="answer-btn" onclick="selectAnswer(${i})">
+      <div class="answer-letter">${labels[i]}</div>
+      ${esc(a)}
+    </button>`
+  ).join('');
+}
+
+function selectAnswer(idx) {
+  const q = QUESTIONS[qIndex];
+  const elapsed = (Date.now() - startTime) / 1000;
+  totalTime += elapsed;
+  const correct = idx === q.correct;
+  if (correct) score++;
+  answers.push(correct);
+
+  const btns = document.querySelectorAll('.answer-btn');
+  btns.forEach((b,i) => {
+    b.disabled = true;
+    if (i === q.correct) b.classList.add(correct ? 'correct' : 'reveal-correct');
+    if (i === idx && !correct) b.classList.add('incorrect');
+  });
+
+  const fb = document.getElementById('q-feedback');
+  fb.className = `feedback ${correct ? 'correct' : 'incorrect'}`;
+  fb.innerHTML = `<span class="feedback-icon">${correct ? '✅' : '❌'}</span><strong>${correct ? 'Correct!' : 'Not quite.'}</strong> ${q.fact}`;
+  fb.style.display = 'block';
+  document.getElementById('next-btn').style.display = 'block';
+  document.getElementById('next-btn').textContent = qIndex === QUESTIONS.length - 1 ? 'See results 🎉' : 'Next question →';
+}
+
+function nextQ() {
+  qIndex++;
+  if (qIndex >= QUESTIONS.length) { showResults(); return; }
+  renderQ();
+}
+
+function showResults() {
+  document.getElementById('quiz-area').style.display = 'none';
+  const res = document.getElementById('results');
+  res.style.display = 'block';
+  const pct = Math.round((score/QUESTIONS.length)*100);
+  let emoji='🌱', msg='', sub='';
+  if (pct===100)  { emoji='🏆'; msg='Perfect score!';        sub='You\'re an eco-legend. The campus is lucky to have you!'; }
+  else if (pct>=80) { emoji='🌟'; msg='Sorting superstar!';   sub='Impressive knowledge. Share what you know with your classmates!'; }
+  else if (pct>=60) { emoji='♻️'; msg='Pretty good recycler!'; sub='You know your bins. A little more practice and you\'ll ace it.'; }
+  else if (pct>=40) { emoji='🌿'; msg='Getting there!';       sub='Every sorting decision matters. Try again to boost your score!'; }
+  else              { emoji='📚'; msg='Time to study up!';     sub='Don\'t worry — ask an eco-monitor for a quick sorting lesson.'; }
+
+  document.getElementById('result-emoji').textContent  = emoji;
+  document.getElementById('result-score').textContent  = `${score}/${QUESTIONS.length}`;
+  document.getElementById('result-message').textContent = msg;
+  document.getElementById('result-sub').textContent     = sub;
+  document.getElementById('res-correct').textContent   = score;
+  document.getElementById('res-pct').textContent       = pct + '%';
+  document.getElementById('res-time').textContent      = (totalTime/QUESTIONS.length).toFixed(1) + 's';
+
+  document.getElementById('result-streak').innerHTML = answers.map((a,i) =>
+    `<div class="streak-dot ${a?'correct':'incorrect'}">${a?'✓':'✗'}</div>`
+  ).join('');
+
+  // Save high score
+  const best = parseInt(localStorage.getItem('gr_quiz_best')||'0');
+  if (score > best) localStorage.setItem('gr_quiz_best', score);
+}
+
+function esc(s) { return String(s).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c])); }
+
+startQuiz();
+</script>
+</body>
+</html>
